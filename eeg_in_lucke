@@ -1,67 +1,64 @@
-// kar je zakomentirano je poskus gradienta barv (bi moral delat)
+// PROGRAM ZA UPORABO LED TRAKU Z NEUROSKY MINDWAVE MOBILE 2
+// BAUDRATE : 57600
+// Za nalaganje potrebna mindwave.h knjižnica (dodaš kot .zip), dobiš tu : https://github.com/orgicus/Mindwave
+// Trenutno naštimano za 2m traku (64 lučk)
+// Če kaj ne dela: Zaženi serial monitor. Vse odklopi in PRVO zaženi napravo, nato šele Mindwave mobile 2
 
+// Dodamo potrebne knjižnice:
 #include <Mindwave.h>
 #include <Adafruit_NeoPixel.h>
 
-//#define MINDWAVE_BAUDRATE 57600
+// Definiramo pin za kontrolo lučk in število le teh:
 #define PIXEL_PIN 6
-#define PIXEL_COUNT 17
+#define PIXEL_COUNT 64
 
+// Ustvarimo objekta za EEG merilnik in lučke
 Mindwave mindwave;
 Adafruit_NeoPixel strip(PIXEL_COUNT, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
+// Definiramo spremenljivke:
 int ponovitve=0; int meditacija; int fokus; int fokus_prej;
-int pozornost_red;int pozornost_green;int pozornost_blue;
-int pozornost_prej_red;int pozornost_prej_green;int pozornost_prej_blue;
-int korak;
 
 void setup() {
+
+  // Zaženemo LED trak in serijsko komunikacijo z Bluetooth modulom:
   strip.begin(); // Initialize NeoPixel strip object (REQUIRED)
   strip.show();  // Initialize all pixels to 'off'
   Serial.begin(MINDWAVE_BAUDRATE);
 
 }
+
+// Funkcija za branje iz Mindwave Mobile 2:
 void onMindwaveData() {
 
+  // Prvo ponovitev se zapomne da je na začetku fokus=0:
   if (ponovitve==0)ponovitve++;
   else fokus_prej=fokus;
 
+  // Razberemo meri meditacije in fokusa:
   meditacija = map(mindwave.meditation(), 0, 100, 0, 255);
   fokus = map(mindwave.attention(), 0, 100, 0, 255);
-  
+
+  // Zapišemo izmerjeni vrednosti na serijski monitor:
   Serial.print("\tattention: ");
   Serial.print(fokus);
   Serial.print("\tmeditation: ");
   Serial.print(meditacija);
   Serial.println();
-  
+
+  // Če se je kaj spremenilo, to pokažemo:
   if(fokus!=fokus_prej)lucke(fokus,fokus_prej);
 }
 
+//Funkcija za obarvanje lučk:
 void lucke(int pozornost, int pozornost_prej)
-{//barvna skala: 1-30:rdeča,31-70:zelena,71-100:modra
-
-/*  if (pozornost<(255/3)){ pozornost_red=pozornost; pozornost_green=0; pozornost_blue=0;}
-  else if (pozornost>(255/3) && pozornost<(255*2/3)){ pozornost_red=0; pozornost_green=pozornost; pozornost_blue=0;}
-  else if (pozornost<(255/3)){ pozornost_red=0; pozornost_green=0; pozornost_blue=pozornost;}
-
-  if (pozornost_prej<(255/3)){ pozornost_prej_red=pozornost_prej; pozornost_prej_green=0; pozornost_prej_blue=0;}
-  else if (pozornost_prej>(255/3) && pozornost_prej<(255*2/3)){ pozornost_prej_red=0; pozornost_prej_green=pozornost_prej; pozornost_prej_blue=0;}
-  else if (pozornost_prej<(255/3)){ pozornost_prej_red=0; pozornost_prej_green=0; pozornost_prej_blue=pozornost_prej;}
-  
-  korak=max(max(pozornost_red-pozornost_prej_red,pozornost_green-pozornost_prej_green),pozornost_blue-pozornost_prej_blue);
-*/    
-  //for(int razlika=0; razlika<korak;razlika++)
-  //for(int razlika=0; razlika<(pozornost-pozornost_prej);razlika++)
-  //{
+{
     strip.clear();
     for (int i = 0; i < PIXEL_COUNT; i++)
     {
-     // strip.setPixelColor(i, pozornost_prej_red+razlika*(pozornost_red-pozornost_prej_red)/korak, pozornost_prej_green+razlika*(pozornost_green-pozornost_prej_green)/korak, pozornost_prej_blue+razlika*(pozornost_blue-pozornost_prej_blue)/korak);
-   strip.setPixelColor(i, pozornost*(pozornost<255/3),pozornost*(pozornost>(255/3) && pozornost<(255*2/3)), pozornost*(pozornost>(255*2/3)));
-
+      strip.setPixelColor(i, pozornost*(pozornost<255/3),pozornost*(pozornost>(255/3) && pozornost<(255*2/3)), pozornost*(pozornost>(255*2/3)));
     }
     strip.show();
-  //}
    
 }
 
